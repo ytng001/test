@@ -57,11 +57,13 @@
     const x = (i) => m.left + (n === 1 ? iw / 2 : (i / (n - 1)) * iw);
     const y = (v) => m.top + ih - (v / max) * ih;
 
-    // Gridlines and y-axis labels.
+    el('rect', { class: 'plot-bg', x: m.left, y: m.top, width: iw, height: ih }, svg);
+
+    // Gridlines and y-axis labels; the zero line is drawn as a baseline rule.
     const ticks = 4;
     for (let t = 0; t <= ticks; t++) {
       const v = (max / ticks) * t;
-      el('line', { class: 'gridline', x1: m.left, x2: W - m.right, y1: y(v), y2: y(v) }, svg);
+      el('line', { class: t === 0 ? 'baseline' : 'gridline', x1: m.left, x2: W - m.right, y1: y(v), y2: y(v) }, svg);
       const label = el('text', { x: m.left - 8, y: y(v) + 4, 'text-anchor': 'end' }, svg);
       label.textContent = fmt(v);
     }
@@ -80,12 +82,28 @@
       el('path', { class: `line line-${si}`, d }, svg);
     });
 
-    // Legend.
+    // Optional label on the highest point of one series.
+    if (opts.peak) {
+      const values = data.series[opts.peak.series].values;
+      const pi = values.indexOf(Math.max(...values));
+      const px = x(pi), py = y(values[pi]);
+      el('circle', { class: `dot-${opts.peak.series}`, cx: px, cy: py, r: 4 }, svg);
+      const nearLeft = px < m.left + iw * 0.3;
+      const label = el('text', {
+        class: 'peak-label',
+        x: nearLeft ? px + 10 : px - 10,
+        y: py - 8,
+        'text-anchor': nearLeft ? 'start' : 'end',
+      }, svg);
+      label.textContent = opts.peak.format(data.labels[pi], values[pi]);
+    }
+
+    // Legend. Swatches are short line segments so they carry each line's dash style.
     const legend = el('g', { class: 'legend' }, svg);
     let lx = m.left;
     data.series.forEach((s, si) => {
-      el('rect', { class: `legend-swatch-${si}`, x: lx, y: 6, width: 12, height: 3, rx: 1.5 }, legend);
-      const t = el('text', { x: lx + 18, y: 12 }, legend);
+      el('line', { class: `line line-${si}`, x1: lx, x2: lx + 18, y1: 8, y2: 8 }, legend);
+      const t = el('text', { x: lx + 24, y: 12 }, legend);
       t.textContent = s.name;
       lx += 18 + s.name.length * 7 + 20;
     });
@@ -134,7 +152,7 @@
 
     items.forEach((d, i) => {
       const y0 = m.top + i * rowH;
-      const row = el('g', { class: 'bar-row', 'data-key': d.key }, svg);
+      const row = el('g', { class: 'bar-row' + (opts.selected === d.key ? ' selected' : ''), 'data-key': d.key }, svg);
       // Full-width hit area so the whole row is clickable.
       el('rect', { x: 0, y: y0, width: W, height: rowH, fill: 'transparent' }, row);
 
@@ -145,10 +163,9 @@
       el('rect', {
         class: 'bar' + (dim ? ' dim' : ''),
         x: m.left,
-        y: y0 + 8,
+        y: y0 + (rowH - 14) / 2,
         width: Math.max(2, (d.value / max) * iw),
-        height: rowH - 16,
-        rx: 3,
+        height: 14,
       }, row);
 
       const value = el('text', { x: m.left + (d.value / max) * iw + 8, y: y0 + rowH / 2 + 4 }, row);

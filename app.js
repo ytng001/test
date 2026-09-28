@@ -47,8 +47,15 @@
   }
 
   const parseDate = (iso) => new Date(iso + 'T00:00:00Z');
-  const shortDate = (iso) => parseDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-  const longDate = (iso) => parseDate(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  // Formatted by hand: en-GB abbreviates September as "Sept".
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const shortDate = (iso) => {
+    const d = parseDate(iso);
+    return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  };
+  const longDate = (iso) => `${DAYS[parseDate(iso).getUTCDay()]} ${shortDate(iso)}`;
+  const rangeDate = (iso) => parseDate(iso).toLocaleDateString('en-GB', { month: 'long', day: 'numeric', timeZone: 'UTC' });
 
   function formatDuration(sec) {
     const s = Math.round(sec);
@@ -64,7 +71,7 @@
   function render() {
     const agg = aggregate(rows, state.source);
 
-    const scope = state.source === 'all' ? '' : `· ${capitalize(state.source)}`;
+    const scope = state.source === 'all' ? '' : `— ${state.source}`;
     document.querySelectorAll('[data-scope]').forEach((node) => (node.textContent = scope));
 
     Charts.lineChart($('#time-chart'), {
@@ -73,7 +80,11 @@
         { name: 'Visits', values: agg.visits },
         { name: 'Page views', values: agg.pageviews },
       ],
-    }, { formatLabel: shortDate, formatTitle: longDate });
+    }, {
+      formatLabel: shortDate,
+      formatTitle: longDate,
+      peak: { series: 1, format: (iso, v) => `peak: ${v.toLocaleString('en-US')} views, ${shortDate(iso)}` },
+    });
 
     Charts.barChart($('#source-chart'), agg.bySource, {
       selected: state.source,
@@ -119,7 +130,7 @@
         if (!Array.isArray(data) || data.length === 0) throw new Error('no rows in data file');
         rows = data;
         const dates = [...new Set(rows.map((r) => r.date))].sort();
-        $('#range').textContent = `${longDate(dates[0])} – ${longDate(dates[dates.length - 1])}`;
+        $('#range').textContent = `${rangeDate(dates[0])} – ${rangeDate(dates[dates.length - 1])}`;
         render();
       })
       .catch((err) => {
