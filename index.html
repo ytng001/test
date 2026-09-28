@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Website Analytics</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="charts.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Website Analytics</h1>
+      <p class="subtitle" id="range">Last 30 days</p>
+    </div>
+    <label class="filter">
+      <span>Source</span>
+      <select id="source-filter">
+        <option value="all">All sources</option>
+      </select>
+    </label>
+  </header>
+
+  <main id="dashboard" class="grid">
+    <section class="card card-wide">
+      <h2>Traffic over time <span class="scope" data-scope></span></h2>
+      <svg id="time-chart" class="chart" role="img" aria-label="Daily visits and page views"></svg>
+    </section>
+
+    <section class="card">
+      <h2>Traffic sources</h2>
+      <p class="hint">Click a bar to filter. Click it again to reset.</p>
+      <svg id="source-chart" class="chart" role="img" aria-label="Visits by traffic source"></svg>
+    </section>
+
+    <section class="card">
+      <h2>Top pages <span class="scope" data-scope></span></h2>
+      <table class="pages">
+        <thead>
+          <tr>
+            <th scope="col">Page</th>
+            <th scope="col" class="num">Views</th>
+            <th scope="col" class="num">Avg. time</th>
+            <th scope="col" class="num">Bounce rate</th>
+          </tr>
+        </thead>
+        <tbody id="pages-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+</body>
+</html>
